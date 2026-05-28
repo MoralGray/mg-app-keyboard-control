@@ -65,7 +65,7 @@ const WRAPPERS = {
             '// @require     https://raw.githubusercontent.com/MoralGray/mg-app-keyboard-control/main/dist/keyboard-control.js',
             '// ==/UserScript==',
         ].join('\n'),
-        footer: footerMake(),
+        footer: '',
         rawOnly: true,
     },
 };
