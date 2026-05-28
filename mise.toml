@@ -1,0 +1,11 @@
+[tools]
+node = '23'
+
+[env]
+# Mode
+## development | production
+NODE_ENV="development"
+
+# Turn on/off logs
+## ON | OFF
+LOG_ENV="ON"
