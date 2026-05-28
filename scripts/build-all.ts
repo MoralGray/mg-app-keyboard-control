@@ -8,12 +8,15 @@ const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, '..');
 const DIST = resolve(ROOT, 'dist');
 
+const footerRaw = `const engine = new KeyboardControl.KeyboardControlEngine();\nengine.mount();`;
+const footerMake = () => [footerRaw].join('\n');
+
 function build() {
     execSync('npx vite build', { cwd: ROOT, stdio: 'inherit' });
 }
 
 const WRAPPERS = {
-    'keyboard-control.js': { banner: '', footer: '' },
+    'keyboard-control.js': { banner: '', footer: footerMake() },
     'violetmonkey.user.js': {
         banner: [
             '// ==UserScript==',
@@ -30,7 +33,7 @@ const WRAPPERS = {
             '// @description',
             '// ==/UserScript==',
         ].join('\n'),
-        footer: ['', 'const engine = new KeyboardControl.KeyboardControlEngine();', 'engine.mount();'].join('\n'),
+        footer: footerMake(),
     },
     'tampermonkey.user.js': {
         banner: [
@@ -47,9 +50,9 @@ const WRAPPERS = {
             '// @author       -',
             '// ==/UserScript==',
         ].join('\n'),
-        footer: ['', 'const engine = new KeyboardControl.KeyboardControlEngine();', 'engine.mount();'].join('\n'),
+        footer: footerMake(),
     },
-    'obsidian.script.js': { banner: '', footer: '' },
+    'obsidian.script.js': { banner: '', footer: footerMake() },
     'userscript-url.txt': {
         banner: [
             '// ==UserScript==',
@@ -62,7 +65,7 @@ const WRAPPERS = {
             '// @require     https://raw.githubusercontent.com/MoralGray/mg-app-keyboard-control/main/dist/keyboard-control.js',
             '// ==/UserScript==',
         ].join('\n'),
-        footer: '',
+        footer: footerMake(),
         rawOnly: true,
     },
 };

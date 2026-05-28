@@ -358,3 +358,6 @@ var KeyboardControl = (function(exports) {
 	exports.updateRects = updateRects;
 	return exports;
 })({});
+
+const engine = new KeyboardControl.KeyboardControlEngine();
+engine.mount();
