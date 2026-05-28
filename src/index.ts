@@ -266,34 +266,72 @@ export function matchShortcut(
     return keyMatch && altMatch && ctrlMatch && shiftMatch && metaMatch;
 }
 
-export function focusElement(item: HintedElement): void {
-    if (item.url) {
-        window.open(item.url, '_blank');
-        return;
-    }
+let _activeFocusCleanup: (() => void) | null = null;
 
+export function focusElement(item: HintedElement): void {
     const element = item.element;
     if (!(element instanceof HTMLElement)) {
         return;
     }
 
+    if (_activeFocusCleanup) {
+        _activeFocusCleanup();
+    }
+
     element.focus();
     element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    if (item.url) {
+        element.style.outline = '2px solid #4A90D9';
+        element.style.outlineOffset = '2px';
+    }
+
+    const cleanup = () => {
+        document.removeEventListener('keydown', keyHandler, true);
+        document.removeEventListener('keydown', tabHandler, true);
+        document.removeEventListener('mousedown', mouseHandler, true);
+        element.removeEventListener('blur', blurHandler);
+        if (item.url) {
+            element.style.outline = '';
+            element.style.outlineOffset = '';
+        }
+        if (_activeFocusCleanup === cleanup) {
+            _activeFocusCleanup = null;
+        }
+    };
 
     const keyHandler = (e: KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            element.click();
-            document.removeEventListener('keydown', keyHandler, true);
+            cleanup();
+            if (item.url) {
+                window.open(item.url, '_blank');
+            } else {
+                element.click();
+            }
         }
     };
 
+    const tabHandler = (e: KeyboardEvent) => {
+        if (e.key === 'Tab' || e.key === 'Escape') {
+            cleanup();
+        }
+    };
+
+    const mouseHandler = () => {
+        cleanup();
+    };
+
     document.addEventListener('keydown', keyHandler, true);
+    document.addEventListener('keydown', tabHandler, true);
+    document.addEventListener('mousedown', mouseHandler, true);
 
     const blurHandler = () => {
-        document.removeEventListener('keydown', keyHandler, true);
+        cleanup();
     };
     element.addEventListener('blur', blurHandler, { once: true });
+
+    _activeFocusCleanup = cleanup;
 }
 
 // # ==========================================================================
