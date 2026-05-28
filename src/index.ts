@@ -274,9 +274,13 @@ export class KeyboardControlEngine {
     }
 
     activate(): void {
-        if (this._isActive) { return; }
+        if (this._isActive) {
+            return;
+        }
         const elements = scanInteractiveElements(this.config.selector);
-        if (elements.length === 0) { return; }
+        if (elements.length === 0) {
+            return;
+        }
 
         this._isActive = true;
         this._hintedElements = elements;
@@ -288,7 +292,9 @@ export class KeyboardControlEngine {
     }
 
     deactivate(): void {
-        if (!this._isActive) { return; }
+        if (!this._isActive) {
+            return;
+        }
         this._isActive = false;
         this._hintedElements = [];
         this._currentFilter = '';
@@ -400,9 +406,7 @@ export class KeyboardControlEngine {
                 'border-radius:3px',
                 'box-shadow:0 1px 3px rgba(0,0,0,0.4)',
             ].join(';');
-            inner.textContent = this._isTwoLetterMode && this._currentFilter
-                ? item.hint.slice(1)
-                : item.hint;
+            inner.textContent = this._isTwoLetterMode && this._currentFilter ? item.hint.slice(1) : item.hint;
 
             hintEl.appendChild(inner);
             root.appendChild(hintEl);
