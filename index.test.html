@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Keyboard Control Test</title>
+<style>
+button { margin: 2px; }
+.tab-bar { display: flex; gap: 4px; margin-bottom: 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+.tab { padding: 6px 14px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px 4px 0 0; background: #f5f5f5; }
+.tab.active { background: #fff; border-bottom-color: #fff; font-weight: bold; }
+.tab-content { display: none; padding: 8px; }
+.tab-content.active { display: block; }
+hr { margin: 20px 0; }
+.biggest { width: 800px;}
+</style>
+</head>
+<body>
+
+<h1>Keyboard Control Test</h1>
+
+<div class="tab-bar">
+<button class="tab active" data-tab="one-letter">1-letter mode (&le;26)</button>
+<button class="tab" data-tab="two-letter">2-letter mode (&gt;26)</button>
+</div>
+
+<!-- Tab 1: ≤26 elements — 1-letter hints -->
+<div id="one-letter" class="tab-content active">
+<h2>1-letter mode (few elements)</h2>
+<button>Btn1</button>
+<button>Btn2</button>
+<button>Btn3</button>
+<button>Btn4</button>
+<button>Btn5</button>
+<button>Btn6</button>
+<button>Btn7</button>
+<button>Btn8</button>
+
+<input type="text" placeholder="single input should get 'i'">
+
+<a href="https://github.com">Link</a>
+<a href="https://github.com">Other link</a>
+<p>Inline URL: https://github.com lorem</p>
+</div>
+
+<!-- Tab 2: >26 elements — 2-letter hints -->
+<div id="two-letter" class="tab-content">
+<h2>2-letter mode (many elements)</h2>
+<button>B01</button><button>B02</button><button>B03</button><button>B04</button><button>B05</button>
+<button>B06</button><button>B07</button><button>B08</button><button>B09</button><button>B10</button>
+<button>B11</button><button>B12</button><button>B13</button><button>B14</button><button>B15</button>
+<button>B16</button><button>B17</button><button>B18</button><button>B19</button><button>B20</button>
+<button>B21</button><button>B22</button><button>B23</button><button>B24</button><button>B25</button>
+<button>B26</button><button>B27</button><button>B28</button>
+
+<input type="text" size="10" placeholder="small input">
+<input type="text" size="80" placeholder="big input (should get i2)">
+<input type="text" size="40" placeholder="medium input (should get i3)">
+<input type="text" class="biggest" placeholder="super big input (should get i1)">
+
+<select><option>A</option><option>B</option></select>
+<textarea rows="2" cols="20">textarea</textarea>
+
+<a href="https://github.com">Link A</a>
+<a href="https://github.com">Link B</a>
+<a href="https://github.com">Link C</a>
+<a href="https://github.com">Link D</a>
+
+<p>Visit https://github.com/1 and https://github.com/2 for more.</p>
+
+<div role="button" tabindex="0">Role btn</div>
+<div role="switch" tabindex="0">Role switch</div>
+<div contenteditable="true">Edit me</div>
+</div>
+
+<script src="dist/keyboard-control.js"></script>
+<script>
+(() => {
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach((t) => { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach((tc) => { tc.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>
