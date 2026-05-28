@@ -1,8 +1,11 @@
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = resolve(import.meta.dirname, '..');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const ROOT = resolve(__dirname, '..');
 const DIST = resolve(ROOT, 'dist');
 
 function build() {
@@ -27,11 +30,7 @@ const WRAPPERS = {
             '// @description',
             '// ==/UserScript==',
         ].join('\n'),
-        footer: [
-            '',
-            'const engine = new KeyboardControl.KeyboardControlEngine();',
-            'engine.mount();',
-        ].join('\n'),
+        footer: ['', 'const engine = new KeyboardControl.KeyboardControlEngine();', 'engine.mount();'].join('\n'),
     },
     'tampermonkey.user.js': {
         banner: [
@@ -48,22 +47,38 @@ const WRAPPERS = {
             '// @author       -',
             '// ==/UserScript==',
         ].join('\n'),
-        footer: [
-            '',
-            'const engine = new KeyboardControl.KeyboardControlEngine();',
-            'engine.mount();',
-        ].join('\n'),
+        footer: ['', 'const engine = new KeyboardControl.KeyboardControlEngine();', 'engine.mount();'].join('\n'),
     },
     'obsidian.script.js': { banner: '', footer: '' },
+    'userscript-url.txt': {
+        banner: [
+            '// ==UserScript==',
+            '// @name        Keyboard Navigation',
+            '// @namespace   mg-nx-forge',
+            '// @version     0.0.1',
+            '// @match       *://*/*',
+            '// @grant       none',
+            '// @run-at      document-idle',
+            '// @require     https://raw.githubusercontent.com/MoralGray/mg-app-keyboard-control/main/dist/keyboard-control.js',
+            '// ==/UserScript==',
+        ].join('\n'),
+        footer: '',
+        rawOnly: true,
+    },
 };
 
-
-
-function wrap(raw, wrapper) {
+function wrap(raw: string, wrapper: { banner?: string; footer?: string; rawOnly?: boolean }) {
+    if (wrapper.rawOnly) {
+        return [wrapper.banner || '', wrapper.footer || ''].join('\n').trim();
+    }
     const parts = [];
-    if (wrapper.banner) parts.push(wrapper.banner);
+    if (wrapper.banner) {
+        parts.push(wrapper.banner);
+    }
     parts.push(raw);
-    if (wrapper.footer) parts.push(wrapper.footer);
+    if (wrapper.footer) {
+        parts.push(wrapper.footer);
+    }
     return parts.join('\n');
 }
 

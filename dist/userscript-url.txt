@@ -1,0 +1,9 @@
+// ==UserScript==
+// @name        Keyboard Navigation
+// @namespace   mg-nx-forge
+// @version     0.0.1
+// @match       *://*/*
+// @grant       none
+// @run-at      document-idle
+// @require     https://raw.githubusercontent.com/MoralGray/mg-app-keyboard-control/main/dist/keyboard-control.js
+// ==/UserScript==
