@@ -27,19 +27,14 @@ var KeyboardControl = (function(exports) {
 	var ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 	var HINT_W = 30;
 	var HINT_H = 22;
-	function shuffleArray(arr) {
-		const result = [...arr];
-		for (let i = result.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[result[i], result[j]] = [result[j], result[i]];
-		}
-		return result;
-	}
 	function generateHints(count) {
-		if (count <= 26) return shuffleArray(ALPHABET.split("")).slice(0, count);
+		if (count <= 26) return ALPHABET.split("").slice(0, count);
 		const combos = [];
-		for (const a of ALPHABET) for (const b of ALPHABET) combos.push(a + b);
-		return shuffleArray(combos).slice(0, count);
+		for (const a of ALPHABET) for (const b of ALPHABET) {
+			combos.push(a + b);
+			if (combos.length === count) return combos;
+		}
+		return combos;
 	}
 	function scanInteractiveElements(customSelector) {
 		const selector = customSelector ?? DEFAULT_SELECTOR;

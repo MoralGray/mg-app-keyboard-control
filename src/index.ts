@@ -68,29 +68,22 @@ export const HINT_W = 30;
 export const HINT_H = 22;
 const GAP = 4;
 
-function shuffleArray<T>(arr: T[]): T[] {
-    const result = [...arr];
-    for (let i = result.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-}
-
 export function generateHints(count: number): string[] {
     if (count <= 26) {
-        const letters = shuffleArray(ALPHABET.split(''));
-        return letters.slice(0, count);
+        return ALPHABET.split('').slice(0, count);
     }
 
     const combos: string[] = [];
     for (const a of ALPHABET) {
         for (const b of ALPHABET) {
             combos.push(a + b);
+            if (combos.length === count) {
+                return combos;
+            }
         }
     }
 
-    return shuffleArray(combos).slice(0, count);
+    return combos;
 }
 
 export function scanInteractiveElements(customSelector?: string): HintedElement[] {
