@@ -8,8 +8,9 @@ const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, '..');
 const DIST = resolve(ROOT, 'dist');
 
-const footerRaw = `const engine = new KeyboardControl.KeyboardControlEngine();\nengine.mount();`;
-const footerMake = () => [footerRaw].join('\n');
+const footerMake = () => {
+    return `const engine = new KeyboardControl.KeyboardControlEngine();\nengine.mount();`;
+};
 
 function build() {
     execSync('npx vite build', { cwd: ROOT, stdio: 'inherit' });
@@ -26,7 +27,8 @@ const WRAPPERS = {
             '// @version     0.0.1',
             '//',
             '// @match       *://*/*',
-            '// @grant       none',
+            '// @grant       GM_setValue',
+            '// @grant       GM_getValue',
             '// @run-at      document-idle',
             '//',
             '// @author      -',
@@ -44,7 +46,8 @@ const WRAPPERS = {
             '// @version      0.0.1',
             '//',
             '// @match        *://*/*',
-            '// @grant        none',
+            '// @grant        GM_setValue',
+            '// @grant        GM_getValue',
             '// @run-at       document-idle',
             '//',
             '// @author       -',
@@ -60,7 +63,8 @@ const WRAPPERS = {
             '// @namespace   mg-nx-forge',
             '// @version     0.0.1',
             '// @match       *://*/*',
-            '// @grant       none',
+            '// @grant       GM_setValue',
+            '// @grant       GM_getValue',
             '// @run-at      document-idle',
             '// @require     https://raw.githubusercontent.com/MoralGray/mg-app-keyboard-control/main/dist/keyboard-control.js',
             '// ==/UserScript==',

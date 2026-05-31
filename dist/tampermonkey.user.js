@@ -5,7 +5,8 @@
 // @version      0.0.1
 //
 // @match        *://*/*
-// @grant        none
+// @grant        GM_setValue
+// @grant        GM_getValue
 // @run-at       document-idle
 //
 // @author       -
@@ -25,6 +26,29 @@ var KeyboardControl = (function(exports) {
 		"[tabindex]:not([tabindex=\"-1\"])"
 	].join(",");
 	var ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+	function detectStorage() {
+		if (typeof GM_getValue !== "undefined" && typeof GM_setValue !== "undefined") return {
+			get: (key, def) => GM_getValue(key, def),
+			set: (key, val) => GM_setValue(key, val),
+			name: "GM storage"
+		};
+		return {
+			get: (key, def) => {
+				try {
+					const raw = localStorage.getItem(key);
+					return raw !== null ? JSON.parse(raw) : def;
+				} catch {
+					return def;
+				}
+			},
+			set: (key, val) => {
+				try {
+					localStorage.setItem(key, JSON.stringify(val));
+				} catch {}
+			},
+			name: "localStorage"
+		};
+	}
 	function isElementHidden(el) {
 		if (!document.body.contains(el)) return true;
 		if (el.hasAttribute("hidden")) return true;
@@ -281,6 +305,7 @@ var KeyboardControl = (function(exports) {
 	}
 	var KeyboardControlEngine = class {
 		config;
+		_storage;
 		_isActive = false;
 		_hintedElements = [];
 		_currentFilter = "";
@@ -292,11 +317,13 @@ var KeyboardControl = (function(exports) {
 		_isSettingsOpen = false;
 		_settingsModalRoot = null;
 		constructor(config) {
+			this._storage = detectStorage();
+			const sc = this._storage.get("kbShortcut", null) ?? config?.shortcut ?? {
+				key: "\\",
+				ctrl: true
+			};
 			this.config = {
-				shortcut: config?.shortcut ?? {
-					key: "\\",
-					ctrl: true
-				},
+				shortcut: sc,
 				selector: config?.selector ?? DEFAULT_SELECTOR
 			};
 		}
@@ -347,11 +374,7 @@ var KeyboardControl = (function(exports) {
 		mount() {
 			this._onKeyDown = (event) => {
 				if (this._isSettingsOpen) return;
-				if (matchShortcut(event, {
-					key: "\\",
-					ctrl: true,
-					shift: true
-				})) {
+				if (event.code === "Backslash" && event.ctrlKey && event.shiftKey) {
 					event.preventDefault();
 					event.stopPropagation();
 					this.openSettings();
@@ -479,6 +502,7 @@ var KeyboardControl = (function(exports) {
 			const backdrop = document.createElement("div");
 			backdrop.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;";
 			const modal = document.createElement("div");
+			modal.tabIndex = -1;
 			modal.style.cssText = "background:#fff;color:#000;padding:24px;border-radius:8px;min-width:300px;font-family:system-ui,sans-serif;font-size:14px;";
 			const title = document.createElement("div");
 			title.textContent = "Keyboard Control Settings";
@@ -493,6 +517,9 @@ var KeyboardControl = (function(exports) {
 			const helpText = document.createElement("div");
 			helpText.textContent = "Press any key combo or Escape to cancel";
 			helpText.style.cssText = "font-size:12px;color:#666;margin-bottom:12px;";
+			const storageInfo = document.createElement("div");
+			storageInfo.textContent = `Storage: ${this._storage.name}`;
+			storageInfo.style.cssText = "font-size:11px;color:#999;margin-bottom:12px;";
 			const btnRow = document.createElement("div");
 			btnRow.style.cssText = "display:flex;gap:8px;";
 			const saveBtn = document.createElement("button");
@@ -502,6 +529,29 @@ var KeyboardControl = (function(exports) {
 			cancelBtn.textContent = "Cancel";
 			cancelBtn.style.cssText = "padding:6px 16px;cursor:pointer;";
 			let captured = null;
+			const KEY_NORMALIZE = {
+				"|": "\\",
+				_: "-",
+				"+": "=",
+				"{": "[",
+				"}": "]",
+				":": ";",
+				"\"": "'",
+				"<": ",",
+				">": ".",
+				"?": "/",
+				"~": "`",
+				"!": "1",
+				"@": "2",
+				"#": "3",
+				$: "4",
+				"%": "5",
+				"^": "6",
+				"&": "7",
+				"*": "8",
+				"(": "9",
+				")": "0"
+			};
 			const captureHandler = (e) => {
 				e.preventDefault();
 				e.stopPropagation();
@@ -510,7 +560,7 @@ var KeyboardControl = (function(exports) {
 					return;
 				}
 				captured = {
-					key: e.key,
+					key: KEY_NORMALIZE[e.key] ?? e.key,
 					ctrl: e.ctrlKey || false,
 					alt: e.altKey || false,
 					shift: e.shiftKey || false,
@@ -525,7 +575,10 @@ var KeyboardControl = (function(exports) {
 				this._settingsModalRoot = null;
 			};
 			saveBtn.addEventListener("click", () => {
-				if (captured) this.config.shortcut = captured;
+				if (captured) {
+					this.config.shortcut = captured;
+					this._storage.set("kbShortcut", captured);
+				}
 				close();
 			});
 			cancelBtn.addEventListener("click", close);
@@ -533,6 +586,7 @@ var KeyboardControl = (function(exports) {
 			modal.appendChild(label);
 			modal.appendChild(display);
 			modal.appendChild(helpText);
+			modal.appendChild(storageInfo);
 			modal.appendChild(btnRow);
 			btnRow.appendChild(saveBtn);
 			btnRow.appendChild(cancelBtn);

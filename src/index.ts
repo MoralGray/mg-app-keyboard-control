@@ -2,6 +2,9 @@
 // # Types
 // # ==========================================================================
 
+declare function GM_getValue<T>(key: string, defaultValue: T): T;
+declare function GM_setValue(key: string, value: unknown): void;
+
 export interface KeyboardControlConfig {
     shortcut: {
         key: string;
@@ -50,6 +53,41 @@ export const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 export interface EngineConfig {
     shortcut?: { key: string; alt?: boolean; ctrl?: boolean; shift?: boolean; meta?: boolean };
     selector?: string;
+}
+
+interface StorageAdapter {
+    get<T>(key: string, defaultValue: T): T;
+    set(key: string, value: unknown): void;
+    name: string;
+}
+
+function detectStorage(): StorageAdapter {
+    const gms = typeof GM_getValue !== 'undefined' && typeof GM_setValue !== 'undefined';
+    if (gms) {
+        return {
+            get: (key, def) => GM_getValue(key, def),
+            set: (key, val) => GM_setValue(key, val),
+            name: 'GM storage',
+        };
+    }
+    return {
+        get: (key, def) => {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw !== null ? JSON.parse(raw) : def;
+            } catch {
+                return def;
+            }
+        },
+        set: (key, val) => {
+            try {
+                localStorage.setItem(key, JSON.stringify(val));
+            } catch {
+                // ignore
+            }
+        },
+        name: 'localStorage',
+    };
 }
 
 export interface EngineState {
@@ -373,7 +411,11 @@ export function focusElement(item: HintedElement): void {
 type Listener = (state: EngineState) => void;
 
 export class KeyboardControlEngine {
-    private config: Required<EngineConfig>;
+    private config: {
+        shortcut: { key: string; alt?: boolean; ctrl?: boolean; shift?: boolean; meta?: boolean };
+        selector: string;
+    };
+    private _storage: StorageAdapter;
     private _isActive = false;
     private _hintedElements: HintedElement[] = [];
     private _currentFilter = '';
@@ -386,8 +428,17 @@ export class KeyboardControlEngine {
     private _settingsModalRoot: HTMLDivElement | null = null;
 
     constructor(config?: EngineConfig) {
+        this._storage = detectStorage();
+        const saved = this._storage.get<{
+            key: string;
+            ctrl?: boolean;
+            alt?: boolean;
+            shift?: boolean;
+            meta?: boolean;
+        } | null>('kbShortcut', null);
+        const sc = saved ?? config?.shortcut ?? { key: '\\', ctrl: true };
         this.config = {
-            shortcut: config?.shortcut ?? { key: '\\', ctrl: true },
+            shortcut: sc,
             selector: config?.selector ?? DEFAULT_SELECTOR,
         };
     }
@@ -457,7 +508,7 @@ export class KeyboardControlEngine {
                 return;
             }
 
-            if (matchShortcut(event, { key: '\\', ctrl: true, shift: true })) {
+            if (event.code === 'Backslash' && event.ctrlKey && event.shiftKey) {
                 event.preventDefault();
                 event.stopPropagation();
                 this.openSettings();
@@ -631,6 +682,7 @@ export class KeyboardControlEngine {
             'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;';
 
         const modal = document.createElement('div');
+        modal.tabIndex = -1;
         modal.style.cssText =
             'background:#fff;color:#000;padding:24px;border-radius:8px;min-width:300px;font-family:system-ui,sans-serif;font-size:14px;';
 
@@ -652,6 +704,10 @@ export class KeyboardControlEngine {
         helpText.textContent = 'Press any key combo or Escape to cancel';
         helpText.style.cssText = 'font-size:12px;color:#666;margin-bottom:12px;';
 
+        const storageInfo = document.createElement('div');
+        storageInfo.textContent = `Storage: ${this._storage.name}`;
+        storageInfo.style.cssText = 'font-size:11px;color:#999;margin-bottom:12px;';
+
         const btnRow = document.createElement('div');
         btnRow.style.cssText = 'display:flex;gap:8px;';
 
@@ -665,6 +721,30 @@ export class KeyboardControlEngine {
 
         let captured: { key: string; ctrl?: boolean; alt?: boolean; shift?: boolean; meta?: boolean } | null = null;
 
+        const KEY_NORMALIZE: Record<string, string> = {
+            '|': '\\',
+            _: '-',
+            '+': '=',
+            '{': '[',
+            '}': ']',
+            ':': ';',
+            '"': "'",
+            '<': ',',
+            '>': '.',
+            '?': '/',
+            '~': '`',
+            '!': '1',
+            '@': '2',
+            '#': '3',
+            $: '4',
+            '%': '5',
+            '^': '6',
+            '&': '7',
+            '*': '8',
+            '(': '9',
+            ')': '0',
+        };
+
         const captureHandler = (e: KeyboardEvent) => {
             e.preventDefault();
             e.stopPropagation();
@@ -673,7 +753,7 @@ export class KeyboardControlEngine {
                 return;
             }
             captured = {
-                key: e.key,
+                key: KEY_NORMALIZE[e.key] ?? e.key,
                 ctrl: e.ctrlKey || false,
                 alt: e.altKey || false,
                 shift: e.shiftKey || false,
@@ -693,6 +773,7 @@ export class KeyboardControlEngine {
         saveBtn.addEventListener('click', () => {
             if (captured) {
                 this.config.shortcut = captured;
+                this._storage.set('kbShortcut', captured);
             }
             close();
         });
@@ -703,6 +784,7 @@ export class KeyboardControlEngine {
         modal.appendChild(label);
         modal.appendChild(display);
         modal.appendChild(helpText);
+        modal.appendChild(storageInfo);
         modal.appendChild(btnRow);
         btnRow.appendChild(saveBtn);
         btnRow.appendChild(cancelBtn);

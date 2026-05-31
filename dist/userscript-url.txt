@@ -3,7 +3,8 @@
 // @namespace   mg-nx-forge
 // @version     0.0.1
 // @match       *://*/*
-// @grant       none
+// @grant       GM_setValue
+// @grant       GM_getValue
 // @run-at      document-idle
 // @require     https://raw.githubusercontent.com/MoralGray/mg-app-keyboard-control/main/dist/keyboard-control.js
 // ==/UserScript==
