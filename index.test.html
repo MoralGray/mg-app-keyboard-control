@@ -21,6 +21,7 @@ hr { margin: 20px 0; }
 <div class="tab-bar">
 <button class="tab active" data-tab="one-letter">1-letter mode (&le;26)</button>
 <button class="tab" data-tab="two-letter">2-letter mode (&gt;26)</button>
+<button class="tab" data-tab="hidden">Hidden elements</button>
 </div>
 
 <!-- Tab 1: ≤26 elements — 1-letter hints -->
@@ -70,6 +71,26 @@ hr { margin: 20px 0; }
 <div role="button" tabindex="0">Role btn</div>
 <div role="switch" tabindex="0">Role switch</div>
 <div contenteditable="true">Edit me</div>
+</div>
+
+<div id="hidden" class="tab-content">
+  <h2>Hidden elements (should NOT show hints)</h2>
+  <p>Activate keyboard control — none of the elements below should have a hint label.</p>
+
+  <div style="border:1px dashed #999; padding:8px; margin-bottom:8px;">
+    <strong style="color:#666;">visible controls for comparison:</strong><br>
+    <button>Visible Btn A</button>
+    <button>Visible Btn B</button>
+    <a href="https://example.com">Visible Link</a>
+  </div>
+
+  <div style="border:1px solid red; padding:8px;">
+    <button hidden>hidden attribute</button>
+    <button style="display:none">display: none</button>
+    <button style="visibility:hidden">visibility: hidden</button>
+    <button style="opacity:0">opacity: 0</button>
+    <button style="width:0;height:0;overflow:hidden">zero-size overflow hidden</button>
+  </div>
 </div>
 
 <script src="dist/keyboard-control.js"></script>

@@ -64,6 +64,43 @@ export interface EngineState {
 // # Utils
 // # ==========================================================================
 
+// # ------------------------------------------------------------------
+// # Element visibility filter
+// # ------------------------------------------------------------------
+
+export function isElementHidden(el: Element): boolean {
+    if (!document.body.contains(el)) {
+        return true;
+    }
+    if (el.hasAttribute('hidden')) {
+        return true;
+    }
+    if (el instanceof HTMLElement) {
+        const style = getComputedStyle(el);
+        if (style.display === 'none') {
+            return true;
+        }
+        if (style.visibility !== 'visible') {
+            return true;
+        }
+        if (parseFloat(style.opacity) === 0) {
+            return true;
+        }
+        if (parseFloat(style.width) === 0 && parseFloat(style.height) === 0) {
+            return true;
+        }
+    }
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+        return true;
+    }
+    return false;
+}
+
+export function isElementVisible(el: Element): boolean {
+    return !isElementHidden(el);
+}
+
 export const HINT_W = 30;
 export const HINT_H = 22;
 const GAP = 4;
@@ -92,10 +129,10 @@ export function scanInteractiveElements(customSelector?: string): HintedElement[
     const result: HintedElement[] = [];
 
     for (const el of elements) {
-        const rect = el.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) {
+        if (isElementHidden(el)) {
             continue;
         }
+        const rect = el.getBoundingClientRect();
         result.push({ element: el, hint: '', rect });
     }
 
@@ -182,11 +219,6 @@ function applyBiggestInputHint(elements: HintedElement[]): void {
             elements[targetIdx].hint = hint;
         }
     }
-}
-
-export function isElementVisible(el: Element): boolean {
-    const rect = el.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
 }
 
 export function resolveCollisions(elements: HintedElement[]): HintedElement[] {

@@ -13,6 +13,23 @@ var KeyboardControl = (function(exports) {
 		"[tabindex]:not([tabindex=\"-1\"])"
 	].join(",");
 	var ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+	function isElementHidden(el) {
+		if (!document.body.contains(el)) return true;
+		if (el.hasAttribute("hidden")) return true;
+		if (el instanceof HTMLElement) {
+			const style = getComputedStyle(el);
+			if (style.display === "none") return true;
+			if (style.visibility !== "visible") return true;
+			if (parseFloat(style.opacity) === 0) return true;
+			if (parseFloat(style.width) === 0 && parseFloat(style.height) === 0) return true;
+		}
+		const rect = el.getBoundingClientRect();
+		if (rect.width === 0 || rect.height === 0) return true;
+		return false;
+	}
+	function isElementVisible(el) {
+		return !isElementHidden(el);
+	}
 	var HINT_W = 30;
 	var HINT_H = 22;
 	function generateHints(count) {
@@ -29,8 +46,8 @@ var KeyboardControl = (function(exports) {
 		const elements = document.querySelectorAll(selector);
 		const result = [];
 		for (const el of elements) {
+			if (isElementHidden(el)) continue;
 			const rect = el.getBoundingClientRect();
-			if (rect.width === 0 || rect.height === 0) continue;
 			result.push({
 				element: el,
 				hint: "",
@@ -103,10 +120,6 @@ var KeyboardControl = (function(exports) {
 				elements[targetIdx].hint = tmp;
 			} else elements[targetIdx].hint = hint;
 		}
-	}
-	function isElementVisible(el) {
-		const rect = el.getBoundingClientRect();
-		return rect.width > 0 && rect.height > 0;
 	}
 	function resolveCollisions(elements) {
 		if (elements.length === 0) return [];
@@ -532,6 +545,7 @@ var KeyboardControl = (function(exports) {
 	exports.KeyboardControlEngine = KeyboardControlEngine;
 	exports.focusElement = focusElement;
 	exports.generateHints = generateHints;
+	exports.isElementHidden = isElementHidden;
 	exports.isElementVisible = isElementVisible;
 	exports.matchShortcut = matchShortcut;
 	exports.resolveCollisions = resolveCollisions;
