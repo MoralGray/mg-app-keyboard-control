@@ -228,7 +228,14 @@ function scanTextLinks(): HintedElement[] {
 }
 
 function applyBiggestInputHint(elements: HintedElement[]): void {
-    const inputs = elements.filter((e) => e.element.tagName === 'INPUT');
+    const inputs = elements.filter((e) => {
+        const tag = e.element.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') {
+            return true;
+        }
+        const attr = e.element.getAttribute('contenteditable');
+        return attr !== null && attr !== 'false';
+    });
     if (inputs.length === 0) {
         return;
     }

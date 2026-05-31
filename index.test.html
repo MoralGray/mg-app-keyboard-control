@@ -53,13 +53,17 @@ hr { margin: 20px 0; }
 <button>B21</button><button>B22</button><button>B23</button><button>B24</button><button>B25</button>
 <button>B26</button><button>B27</button><button>B28</button>
 
-<input type="text" size="10" placeholder="small input">
-<input type="text" size="80" placeholder="big input (should get i2)">
-<input type="text" size="40" placeholder="medium input (should get i3)">
-<input type="text" class="biggest" placeholder="super big input (should get i1)">
+<input type="text" size="10" placeholder="tiny input">
+<input type="text" size="20" placeholder="small input">
+<input type="text" size="30" placeholder="medium input">
 
 <select><option>A</option><option>B</option></select>
-<textarea rows="2" cols="20">textarea</textarea>
+
+<textarea rows="2" cols="20">small textarea</textarea>
+<textarea rows="3" cols="30">medium textarea</textarea>
+
+<div contenteditable="true" style="min-height:24px;border:1px solid #aaa;padding:4px;width:200px;">small editable</div>
+<div contenteditable="true" style="min-height:32px;border:1px solid #aaa;padding:4px;width:320px;">medium editable</div>
 
 <a href="https://github.com">Link A</a>
 <a href="https://github.com">Link B</a>
