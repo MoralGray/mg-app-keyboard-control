@@ -14,6 +14,7 @@ export interface KeyboardControlConfig {
         meta?: boolean;
     };
     selector?: string;
+    filterHidden?: boolean;
 }
 
 export interface HintedElement {
@@ -53,6 +54,7 @@ export const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 export interface EngineConfig {
     shortcut?: { key: string; alt?: boolean; ctrl?: boolean; shift?: boolean; meta?: boolean };
     selector?: string;
+    filterHidden?: boolean;
 }
 
 interface StorageAdapter {
@@ -139,6 +141,10 @@ export function isElementVisible(el: Element): boolean {
     return !isElementHidden(el);
 }
 
+// export function isElementVisible(el: Element): boolean {
+//     return !isElementHidden(el);
+// }
+
 export const HINT_W = 30;
 export const HINT_H = 22;
 const GAP = 4;
@@ -161,13 +167,13 @@ export function generateHints(count: number): string[] {
     return combos;
 }
 
-export function scanInteractiveElements(customSelector?: string): HintedElement[] {
+export function scanInteractiveElements(customSelector?: string, filterHidden = false): HintedElement[] {
     const selector = customSelector ?? DEFAULT_SELECTOR;
     const elements = document.querySelectorAll(selector);
     const result: HintedElement[] = [];
 
     for (const el of elements) {
-        if (isElementHidden(el)) {
+        if (filterHidden && isElementHidden(el)) {
             continue;
         }
         const rect = el.getBoundingClientRect();
@@ -433,6 +439,7 @@ export class KeyboardControlEngine {
     private _onScrollResize: (() => void) | null = null;
     private _isSettingsOpen = false;
     private _settingsModalRoot: HTMLDivElement | null = null;
+    private _filterHidden: boolean;
 
     constructor(config?: EngineConfig) {
         this._storage = detectStorage();
@@ -448,6 +455,12 @@ export class KeyboardControlEngine {
             shortcut: sc,
             selector: config?.selector ?? DEFAULT_SELECTOR,
         };
+        this._filterHidden = this._storage.get<boolean>('filterHidden', false);
+    }
+
+    setFilterHidden(value: boolean): void {
+        this._filterHidden = value;
+        this._storage.set('filterHidden', value);
     }
 
     get state(): EngineState {
@@ -483,7 +496,7 @@ export class KeyboardControlEngine {
         if (this._isActive) {
             return;
         }
-        const elements = scanInteractiveElements(this.config.selector);
+        const elements = scanInteractiveElements(this.config.selector, this._filterHidden);
         if (elements.length === 0) {
             return;
         }
@@ -711,6 +724,17 @@ export class KeyboardControlEngine {
         helpText.textContent = 'Press any key combo or Escape to cancel';
         helpText.style.cssText = 'font-size:12px;color:#666;margin-bottom:12px;';
 
+        const hiddenToggleRow = document.createElement('div');
+        hiddenToggleRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+        const hiddenCheckbox = document.createElement('input');
+        hiddenCheckbox.type = 'checkbox';
+        hiddenCheckbox.checked = this._filterHidden;
+        const hiddenLabel = document.createElement('label');
+        hiddenLabel.textContent = 'Skip hidden elements';
+        hiddenLabel.style.cssText = 'font-size:13px;cursor:pointer;user-select:none;';
+        hiddenToggleRow.appendChild(hiddenCheckbox);
+        hiddenToggleRow.appendChild(hiddenLabel);
+
         const storageInfo = document.createElement('div');
         storageInfo.textContent = `Storage: ${this._storage.name}`;
         storageInfo.style.cssText = 'font-size:11px;color:#999;margin-bottom:12px;';
@@ -782,6 +806,7 @@ export class KeyboardControlEngine {
                 this.config.shortcut = captured;
                 this._storage.set('kbShortcut', captured);
             }
+            this.setFilterHidden(hiddenCheckbox.checked);
             close();
         });
 
@@ -791,6 +816,7 @@ export class KeyboardControlEngine {
         modal.appendChild(label);
         modal.appendChild(display);
         modal.appendChild(helpText);
+        modal.appendChild(hiddenToggleRow);
         modal.appendChild(storageInfo);
         modal.appendChild(btnRow);
         btnRow.appendChild(saveBtn);

@@ -78,12 +78,12 @@ var KeyboardControl = (function(exports) {
 		}
 		return combos;
 	}
-	function scanInteractiveElements(customSelector) {
+	function scanInteractiveElements(customSelector, filterHidden = false) {
 		const selector = customSelector ?? DEFAULT_SELECTOR;
 		const elements = document.querySelectorAll(selector);
 		const result = [];
 		for (const el of elements) {
-			if (isElementHidden(el)) continue;
+			if (filterHidden && isElementHidden(el)) continue;
 			const rect = el.getBoundingClientRect();
 			result.push({
 				element: el,
@@ -322,6 +322,7 @@ var KeyboardControl = (function(exports) {
 		_onScrollResize = null;
 		_isSettingsOpen = false;
 		_settingsModalRoot = null;
+		_filterHidden;
 		constructor(config) {
 			this._storage = detectStorage();
 			const sc = this._storage.get("kbShortcut", null) ?? config?.shortcut ?? {
@@ -332,6 +333,11 @@ var KeyboardControl = (function(exports) {
 				shortcut: sc,
 				selector: config?.selector ?? DEFAULT_SELECTOR
 			};
+			this._filterHidden = this._storage.get("filterHidden", false);
+		}
+		setFilterHidden(value) {
+			this._filterHidden = value;
+			this._storage.set("filterHidden", value);
 		}
 		get state() {
 			const filtered = this._currentFilter ? this._hintedElements.map((item) => ({
@@ -359,7 +365,7 @@ var KeyboardControl = (function(exports) {
 		}
 		activate() {
 			if (this._isActive) return;
-			const elements = scanInteractiveElements(this.config.selector);
+			const elements = scanInteractiveElements(this.config.selector, this._filterHidden);
 			if (elements.length === 0) return;
 			this._isActive = true;
 			this._hintedElements = elements;
@@ -523,6 +529,16 @@ var KeyboardControl = (function(exports) {
 			const helpText = document.createElement("div");
 			helpText.textContent = "Press any key combo or Escape to cancel";
 			helpText.style.cssText = "font-size:12px;color:#666;margin-bottom:12px;";
+			const hiddenToggleRow = document.createElement("div");
+			hiddenToggleRow.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:12px;";
+			const hiddenCheckbox = document.createElement("input");
+			hiddenCheckbox.type = "checkbox";
+			hiddenCheckbox.checked = this._filterHidden;
+			const hiddenLabel = document.createElement("label");
+			hiddenLabel.textContent = "Skip hidden elements";
+			hiddenLabel.style.cssText = "font-size:13px;cursor:pointer;user-select:none;";
+			hiddenToggleRow.appendChild(hiddenCheckbox);
+			hiddenToggleRow.appendChild(hiddenLabel);
 			const storageInfo = document.createElement("div");
 			storageInfo.textContent = `Storage: ${this._storage.name}`;
 			storageInfo.style.cssText = "font-size:11px;color:#999;margin-bottom:12px;";
@@ -585,6 +601,7 @@ var KeyboardControl = (function(exports) {
 					this.config.shortcut = captured;
 					this._storage.set("kbShortcut", captured);
 				}
+				this.setFilterHidden(hiddenCheckbox.checked);
 				close();
 			});
 			cancelBtn.addEventListener("click", close);
@@ -592,6 +609,7 @@ var KeyboardControl = (function(exports) {
 			modal.appendChild(label);
 			modal.appendChild(display);
 			modal.appendChild(helpText);
+			modal.appendChild(hiddenToggleRow);
 			modal.appendChild(storageInfo);
 			modal.appendChild(btnRow);
 			btnRow.appendChild(saveBtn);
