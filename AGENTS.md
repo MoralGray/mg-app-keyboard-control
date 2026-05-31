@@ -141,3 +141,33 @@ To add a new target, edit the `WRAPPERS` map in `scripts/build-all.ts`.
 ## Environment
 
 Node 23 via mise (`.mise.toml`). Bun 1.3 also available (used for `release`). `NODE_ENV=development` and `LOG_ENV=ON` set by mise.
+
+## Comments
+- Use comments this that style
+- Or simple //
+- (### N) is name of type of comment
+### line
+// # -------------------------------------------------------------------------------------------------------------------------------------------
+### main section
+// # ==========================================================================
+// # name
+// # ==========================================================================
+### subsection
+// # ------------------------------------------------------------------
+// # name
+// # ------------------------------------------------------------------
+###
+// name
+
+## TODO.md
+
+Location: `TODO.md` at repo root — project-wide task tracking and epic plans.
+All sections contain numbered epics (`## epic-N`). Each epic is 4-5 items and is fully independent — no overlap between epics. Do not work on tasks/epics if not asked or given to you. Just know they are there, follow the style guide if you are asked.
+
+Style guide:
+- Only first (#) and second (##) and third (###) heading levels allowed — no deeper headings. Section titles are #, epics are ##.
+- No markdown syntax beyond headings and lists (no bold, code ticks, links, etc.)
+- Only simple `-` list items — no `- [ ]` checkboxes or `- [x]` done markers
+- Done items use `<prefix>[DONE] <text>` format: insert `[DONE]` immediately after the number/dash prefix, before the text (e.g. `1. [DONE] text`, `- [DONE] text`, `- - [DONE] text`)
+- Do not change original item text or structure — only add `[DONE]` after its prefix
+- Do not update title (#, ##, ###) with `[DONE]`
