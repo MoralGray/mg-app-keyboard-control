@@ -84,9 +84,9 @@ var KeyboardControl = (function(exports) {
 		return combos;
 	}
 	function generateHintsCentered(count) {
-		const generate = (hand, len, limit) => {
+		const out = [];
+		const emit = (hand, len, limit) => {
 			const h = hand.length;
-			const out = [];
 			for (let i = 0; i < limit; i++) {
 				let s = "";
 				let n = i;
@@ -97,31 +97,27 @@ var KeyboardControl = (function(exports) {
 				}
 				out.push(s);
 			}
+		};
+		const pull = (hand, len, size) => {
+			const need = count - out.length;
+			if (need <= 0) return true;
+			emit(hand, len, Math.min(need, size));
+			return out.length >= count;
+		};
+		if (count <= 12) {
+			emit(LEFT_HAND_LETTERS, 1, count);
 			return out;
-		};
-		let cum = 0;
-		const tryLevel = (len) => {
-			const lSize = 12 ** len;
-			const levelSize = lSize + 10 ** len;
-			if (count <= cum + levelSize) {
-				const need = count - cum;
-				const left = Math.min(need, lSize);
-				const right = need - left;
-				const fromLeft = generate(LEFT_HAND_LETTERS, len, left);
-				const fromRight = generate(RIGHT_HAND_LETTERS, len, right);
-				return [...fromLeft, ...fromRight];
-			}
-			cum += levelSize;
-			return null;
-		};
-		const r = tryLevel(1);
-		if (r) return r;
-		const r2 = tryLevel(2);
-		if (r2) return r2;
-		for (let len = 3;; len++) {
-			const rn = tryLevel(len);
-			if (rn) return rn;
 		}
+		if (pull("qwerasdfzxcv", 2, 144)) return out;
+		if (pull("poiulkjhmn", 1, 10)) return out;
+		if (pull("poiulkjhmn", 2, 100)) return out;
+		if (pull("qwerasdfzxcv", 3, 1728)) return out;
+		if (pull("poiulkjhmn", 3, 1e3)) return out;
+		for (let len = 4; out.length < count; len++) {
+			if (pull("qwerasdfzxcv", len, 12 ** len)) return out;
+			if (pull("poiulkjhmn", len, 10 ** len)) return out;
+		}
+		return out;
 	}
 	function scanInteractiveElements(customSelector, filterHidden = false, alphabet = ALPHABET) {
 		const selector = customSelector ?? DEFAULT_SELECTOR;

@@ -19,14 +19,27 @@ hr { margin: 20px 0; }
 <h1>Keyboard Control Test</h1>
 
 <div class="tab-bar">
-<button class="tab active" data-tab="one-letter">1-letter mode (&le;26)</button>
-<button class="tab" data-tab="two-letter">2-letter mode (&gt;26)</button>
-<button class="tab" data-tab="hidden">Hidden elements</button>
+<button class="tab active" data-tab="centered-1">One letter, centered (7)</button>
+<button class="tab" data-tab="one-letter">One letter (13)</button>
+<button class="tab" data-tab="two-letter">Two letter (48)</button>
+<button class="tab" data-tab="hidden">Hidden (8)</button>
 <button class="tab" data-tab="many-inputs">101 inputs</button>
 </div>
 
-<!-- Tab 1: ≤26 elements — 1-letter hints -->
-<div id="one-letter" class="tab-content active">
+<!-- Tab 1: centered, ≤12 elements — L1 hints -->
+<div id="centered-1" class="tab-content active">
+<h2>One letter, centered (few elements, ≤ left hand)</h2>
+<button>Alpha</button>
+<button>Beta</button>
+<button>Gamma</button>
+<button>Delta</button>
+<a href="https://example.com">Site A</a>
+<a href="https://example.com">Site B</a>
+<p>Link: https://example.com</p>
+</div>
+
+<!-- Tab 2: ≤26 elements — 1-letter hints -->
+<div id="one-letter" class="tab-content">
 <h2>1-letter mode (few elements)</h2>
 <button>Btn1</button>
 <button>Btn2</button>

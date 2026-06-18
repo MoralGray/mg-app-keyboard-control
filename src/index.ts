@@ -188,9 +188,10 @@ export function generateHints(count: number, alphabet = ALPHABET): string[] {
 }
 
 export function generateHintsCentered(count: number): string[] {
-    const generate = (hand: string, len: number, limit: number): string[] => {
+    const out: string[] = [];
+
+    const emit = (hand: string, len: number, limit: number) => {
         const h = hand.length;
-        const out: string[] = [];
         for (let i = 0; i < limit; i++) {
             let s = '';
             let n = i;
@@ -201,44 +202,51 @@ export function generateHintsCentered(count: number): string[] {
             }
             out.push(s);
         }
+    };
+
+    const pull = (hand: string, len: number, size: number): boolean => {
+        const need = count - out.length;
+        if (need <= 0) {
+            return true;
+        }
+        const take = Math.min(need, size);
+        emit(hand, len, take);
+        return out.length >= count;
+    };
+
+    if (count <= 12) {
+        emit(LEFT_HAND_LETTERS, 1, count);
         return out;
-    };
+    }
 
-    let cum = 0;
+    if (pull(LEFT_HAND_LETTERS, 2, 144)) {
+        return out;
+    }
+    if (pull(RIGHT_HAND_LETTERS, 1, 10)) {
+        return out;
+    }
 
-    const tryLevel = (len: number): string[] | null => {
-        const lSize = LEFT_HAND_LETTERS.length ** len;
-        const rSize = RIGHT_HAND_LETTERS.length ** len;
-        const levelSize = lSize + rSize;
+    if (pull(RIGHT_HAND_LETTERS, 2, 100)) {
+        return out;
+    }
 
-        if (count <= cum + levelSize) {
-            const need = count - cum;
-            const left = Math.min(need, lSize);
-            const right = need - left;
-            const fromLeft = generate(LEFT_HAND_LETTERS, len, left);
-            const fromRight = generate(RIGHT_HAND_LETTERS, len, right);
-            return [...fromLeft, ...fromRight];
+    if (pull(LEFT_HAND_LETTERS, 3, 1728)) {
+        return out;
+    }
+    if (pull(RIGHT_HAND_LETTERS, 3, 1000)) {
+        return out;
+    }
+
+    for (let len = 4; out.length < count; len++) {
+        if (pull(LEFT_HAND_LETTERS, len, 12 ** len)) {
+            return out;
         }
-
-        cum += levelSize;
-        return null;
-    };
-
-    const r = tryLevel(1);
-    if (r) {
-        return r;
-    }
-    const r2 = tryLevel(2);
-    if (r2) {
-        return r2;
-    }
-
-    for (let len = 3; ; len++) {
-        const rn = tryLevel(len);
-        if (rn) {
-            return rn;
+        if (pull(RIGHT_HAND_LETTERS, len, 10 ** len)) {
+            return out;
         }
     }
+
+    return out;
 }
 
 export function scanInteractiveElements(
