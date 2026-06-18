@@ -15,6 +15,9 @@ export interface KeyboardControlConfig {
     };
     selector?: string;
     filterHidden?: boolean;
+    uppercaseHints?: boolean;
+    layout?: string;
+    hintMode?: 'alphabet' | 'centered';
 }
 
 export interface HintedElement {
@@ -31,6 +34,9 @@ export interface KeyboardControlState {
     hintedElements: HintedElement[];
     currentFilter: string;
     isTwoLetterMode: boolean;
+    uppercaseHints: boolean;
+    layout: string;
+    hintMode: 'alphabet' | 'centered';
 }
 
 export const DEFAULT_SELECTOR = [
@@ -47,6 +53,14 @@ export const DEFAULT_SELECTOR = [
 
 export const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 
+export const KNOWN_LAYOUTS: Record<string, string> = {
+    en: 'abcdefghijklmnopqrstuvwxyz',
+    ru: 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя',
+};
+
+export const LEFT_HAND_LETTERS = 'qwerasdfzxcv';
+export const RIGHT_HAND_LETTERS = 'poiulkjhmn';
+
 // # ==========================================================================
 // # Engine Types
 // # ==========================================================================
@@ -55,6 +69,9 @@ export interface EngineConfig {
     shortcut?: { key: string; alt?: boolean; ctrl?: boolean; shift?: boolean; meta?: boolean };
     selector?: string;
     filterHidden?: boolean;
+    uppercaseHints?: boolean;
+    layout?: string;
+    hintMode?: 'alphabet' | 'centered';
 }
 
 interface StorageAdapter {
@@ -97,6 +114,9 @@ export interface EngineState {
     hintedElements: HintedElement[];
     currentFilter: string;
     isTwoLetterMode: boolean;
+    uppercaseHints: boolean;
+    layout: string;
+    hintMode: 'alphabet' | 'centered';
     filteredHintedElements: (HintedElement & { filteredOut: boolean })[];
 }
 
@@ -149,14 +169,14 @@ export const HINT_W = 30;
 export const HINT_H = 22;
 const GAP = 4;
 
-export function generateHints(count: number): string[] {
-    if (count <= 26) {
-        return ALPHABET.split('').slice(0, count);
+export function generateHints(count: number, alphabet = ALPHABET): string[] {
+    if (count <= alphabet.length) {
+        return alphabet.slice(0, count).split('');
     }
 
     const combos: string[] = [];
-    for (const a of ALPHABET) {
-        for (const b of ALPHABET) {
+    for (const a of alphabet) {
+        for (const b of alphabet) {
             combos.push(a + b);
             if (combos.length === count) {
                 return combos;
@@ -167,7 +187,65 @@ export function generateHints(count: number): string[] {
     return combos;
 }
 
-export function scanInteractiveElements(customSelector?: string, filterHidden = false): HintedElement[] {
+export function generateHintsCentered(count: number): string[] {
+    const generate = (hand: string, len: number, limit: number): string[] => {
+        const h = hand.length;
+        const out: string[] = [];
+        for (let i = 0; i < limit; i++) {
+            let s = '';
+            let n = i;
+            for (let p = 0; p < len; p++) {
+                const pow = h ** (len - 1 - p);
+                s += hand[Math.floor(n / pow)];
+                n %= pow;
+            }
+            out.push(s);
+        }
+        return out;
+    };
+
+    let cum = 0;
+
+    const tryLevel = (len: number): string[] | null => {
+        const lSize = LEFT_HAND_LETTERS.length ** len;
+        const rSize = RIGHT_HAND_LETTERS.length ** len;
+        const levelSize = lSize + rSize;
+
+        if (count <= cum + levelSize) {
+            const need = count - cum;
+            const left = Math.min(need, lSize);
+            const right = need - left;
+            const fromLeft = generate(LEFT_HAND_LETTERS, len, left);
+            const fromRight = generate(RIGHT_HAND_LETTERS, len, right);
+            return [...fromLeft, ...fromRight];
+        }
+
+        cum += levelSize;
+        return null;
+    };
+
+    const r = tryLevel(1);
+    if (r) {
+        return r;
+    }
+    const r2 = tryLevel(2);
+    if (r2) {
+        return r2;
+    }
+
+    for (let len = 3; ; len++) {
+        const rn = tryLevel(len);
+        if (rn) {
+            return rn;
+        }
+    }
+}
+
+export function scanInteractiveElements(
+    customSelector?: string,
+    filterHidden = false,
+    alphabet = ALPHABET
+): HintedElement[] {
     const selector = customSelector ?? DEFAULT_SELECTOR;
     const elements = document.querySelectorAll(selector);
     const result: HintedElement[] = [];
@@ -177,19 +255,54 @@ export function scanInteractiveElements(customSelector?: string, filterHidden = 
             continue;
         }
         const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+            continue;
+        }
         result.push({ element: el, hint: '', rect });
     }
 
     const textLinks = scanTextLinks();
     result.push(...textLinks);
 
-    const hints = generateHints(result.length);
+    const hints = generateHints(result.length, alphabet);
 
     for (let i = 0; i < result.length; i++) {
         result[i].hint = hints[i] ?? '';
     }
 
     applyBiggestInputHint(result);
+    applySubmitHint(result);
+
+    return resolveCollisions(result);
+}
+
+export function scanInteractiveElementsCentered(customSelector?: string, filterHidden = false): HintedElement[] {
+    const selector = customSelector ?? DEFAULT_SELECTOR;
+    const elements = document.querySelectorAll(selector);
+    const result: HintedElement[] = [];
+
+    for (const el of elements) {
+        if (filterHidden && isElementHidden(el)) {
+            continue;
+        }
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+            continue;
+        }
+        result.push({ element: el, hint: '', rect });
+    }
+
+    const textLinks = scanTextLinks();
+    result.push(...textLinks);
+
+    const hints = generateHintsCentered(result.length);
+
+    for (let i = 0; i < result.length; i++) {
+        result[i].hint = hints[i] ?? '';
+    }
+
+    applyBiggestInputHint(result);
+    applySubmitHint(result);
 
     return resolveCollisions(result);
 }
@@ -248,17 +361,14 @@ function applyBiggestInputHint(elements: HintedElement[]): void {
 
     inputs.sort((a, b) => b.rect.width * b.rect.height - a.rect.width * a.rect.height);
 
-    const isOneLetter = elements.length <= 26;
-
-    let labels: string[];
-    if (inputs.length === 1 && isOneLetter) {
-        labels = ['i'];
-    } else {
-        labels = ['i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9', 'i0'];
+    const digits = Math.max(1, String(inputs.length).length);
+    const labels: string[] = [];
+    for (let i = 1; i <= inputs.length; i++) {
+        labels.push(i.toString().padStart(digits, '0'));
     }
 
     for (let idx = 0; idx < inputs.length; idx++) {
-        const hint = labels[idx] || 'i0';
+        const hint = labels[idx];
         const targetIdx = elements.indexOf(inputs[idx]);
         const existingIdx = elements.findIndex((e) => e.hint === hint);
 
@@ -269,6 +379,34 @@ function applyBiggestInputHint(elements: HintedElement[]): void {
         } else {
             elements[targetIdx].hint = hint;
         }
+    }
+}
+
+function applySubmitHint(elements: HintedElement[]): void {
+    const submits = elements.filter((e) => {
+        const tag = e.element.tagName;
+        if (tag === 'BUTTON' && e.element.getAttribute('type') === 'submit') {
+            return true;
+        }
+        if (tag === 'INPUT' && (e.element as HTMLInputElement).type === 'submit') {
+            return true;
+        }
+        return false;
+    });
+    if (submits.length === 0) {
+        return;
+    }
+
+    const submit = submits[0];
+    const targetIdx = elements.indexOf(submit);
+    const existingIdx = elements.findIndex((e) => e.hint === '=');
+
+    if (existingIdx >= 0 && existingIdx !== targetIdx) {
+        const tmp = elements[existingIdx].hint;
+        elements[existingIdx].hint = elements[targetIdx].hint;
+        elements[targetIdx].hint = tmp;
+    } else {
+        elements[targetIdx].hint = '=';
     }
 }
 
@@ -440,6 +578,10 @@ export class KeyboardControlEngine {
     private _isSettingsOpen = false;
     private _settingsModalRoot: HTMLDivElement | null = null;
     private _filterHidden: boolean;
+    private _uppercaseHints: boolean;
+    private _alphabet: string = ALPHABET;
+    private _layout: string;
+    private _hintMode: 'alphabet' | 'centered';
 
     constructor(config?: EngineConfig) {
         this._storage = detectStorage();
@@ -456,11 +598,31 @@ export class KeyboardControlEngine {
             selector: config?.selector ?? DEFAULT_SELECTOR,
         };
         this._filterHidden = this._storage.get<boolean>('filterHidden', false);
+        this._uppercaseHints = this._storage.get<boolean>('uppercaseHints', true);
+        this._layout = this._storage.get<string>('layout', 'en');
+        this._alphabet = KNOWN_LAYOUTS[this._layout] || ALPHABET;
+        this._hintMode = this._storage.get<'alphabet' | 'centered'>('hintMode', 'alphabet');
     }
 
     setFilterHidden(value: boolean): void {
         this._filterHidden = value;
         this._storage.set('filterHidden', value);
+    }
+
+    setUppercaseHints(value: boolean): void {
+        this._uppercaseHints = value;
+        this._storage.set('uppercaseHints', value);
+    }
+
+    setLayout(value: string): void {
+        this._layout = value;
+        this._storage.set('layout', value);
+        this._alphabet = KNOWN_LAYOUTS[value] || ALPHABET;
+    }
+
+    setHintMode(value: 'alphabet' | 'centered'): void {
+        this._hintMode = value;
+        this._storage.set('hintMode', value);
     }
 
     get state(): EngineState {
@@ -477,6 +639,9 @@ export class KeyboardControlEngine {
             currentFilter: this._currentFilter,
             isTwoLetterMode: this._isTwoLetterMode,
             filteredHintedElements: filtered,
+            uppercaseHints: this._uppercaseHints,
+            layout: this._layout,
+            hintMode: this._hintMode,
         };
     }
 
@@ -496,7 +661,10 @@ export class KeyboardControlEngine {
         if (this._isActive) {
             return;
         }
-        const elements = scanInteractiveElements(this.config.selector, this._filterHidden);
+        const elements =
+            this._hintMode === 'centered'
+                ? scanInteractiveElementsCentered(this.config.selector, this._filterHidden)
+                : scanInteractiveElements(this.config.selector, this._filterHidden, this._alphabet);
         if (elements.length === 0) {
             return;
         }
@@ -504,7 +672,18 @@ export class KeyboardControlEngine {
         this._isActive = true;
         this._hintedElements = elements;
         this._currentFilter = '';
-        this._isTwoLetterMode = elements.length > 26;
+        this._isTwoLetterMode = elements.length > 0 && elements[0].hint.length > 1;
+
+        if (elements.length > 0) {
+            const labels = elements.map((e) => e.hint);
+            const rows: string[] = [];
+            const cols = 6;
+            for (let i = 0; i < labels.length; i += cols) {
+                rows.push(labels.slice(i, i + cols).join(' '));
+            }
+            console.log(`[kb] ${this._hintMode} hints (${labels.length}):`);
+            console.log(rows.join('\n'));
+        }
 
         this.renderOverlay();
         this.notify();
@@ -552,11 +731,12 @@ export class KeyboardControlEngine {
                 return;
             }
 
-            if (event.key.length !== 1 || !/^[a-zA-Z0-9]$/.test(event.key)) {
+            if (event.key.length !== 1 || !/^[\p{L}0-9=]$/u.test(event.key)) {
                 return;
             }
 
             const char = event.key.toLowerCase();
+            console.log('[kb] pressed:', event.key, '→', char, '| charCode:', char.codePointAt(0));
             const elements = this._hintedElements;
             const filter = this._currentFilter;
 
@@ -615,17 +795,24 @@ export class KeyboardControlEngine {
                 `transition:opacity 80ms ease`,
             ].join(';');
 
-            const inner = document.createElement('span');
-            inner.style.cssText = [
+            const text =
+                this._isTwoLetterMode && this._currentFilter ? item.hint.slice(this._currentFilter.length) : item.hint;
+            const displayText = this._uppercaseHints ? text.toUpperCase() : text;
+
+            const inner = document.createElement('div');
+            inner.style.cssText = ['display:flex', 'flex-direction:column', 'align-items:center', 'gap:1px'].join(';');
+
+            const letterSpan = document.createElement('span');
+            letterSpan.style.cssText = [
                 'display:inline-flex',
                 'align-items:center',
                 'justify-content:center',
                 'min-width:22px',
-                'height:22px',
-                'padding:0 4px',
+                'height:18px',
+                'padding:0 6px',
                 'background:#1a1a1a',
                 'color:#ffffff',
-                'font-size:12px',
+                'font-size:11px',
                 'font-family:ui-monospace,monospace',
                 'font-weight:700',
                 'line-height:1',
@@ -634,8 +821,9 @@ export class KeyboardControlEngine {
                 'border-radius:3px',
                 'box-shadow:0 1px 3px rgba(0,0,0,0.4)',
             ].join(';');
-            inner.textContent =
-                this._isTwoLetterMode && this._currentFilter ? item.hint.slice(this._currentFilter.length) : item.hint;
+            letterSpan.textContent = displayText;
+
+            inner.appendChild(letterSpan);
 
             hintEl.appendChild(inner);
             root.appendChild(hintEl);
@@ -735,6 +923,55 @@ export class KeyboardControlEngine {
         hiddenToggleRow.appendChild(hiddenCheckbox);
         hiddenToggleRow.appendChild(hiddenLabel);
 
+        const uppercaseToggleRow = document.createElement('div');
+        uppercaseToggleRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+        const uppercaseCheckbox = document.createElement('input');
+        uppercaseCheckbox.type = 'checkbox';
+        uppercaseCheckbox.checked = this._uppercaseHints;
+        const uppercaseLabel = document.createElement('label');
+        uppercaseLabel.textContent = 'Capitalized letters';
+        uppercaseLabel.style.cssText = 'font-size:13px;cursor:pointer;user-select:none;';
+        uppercaseToggleRow.appendChild(uppercaseCheckbox);
+        uppercaseToggleRow.appendChild(uppercaseLabel);
+
+        const layoutRow = document.createElement('div');
+        layoutRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+        const layoutLabel = document.createElement('label');
+        layoutLabel.textContent = 'Keyboard layout:';
+        layoutLabel.style.cssText = 'font-size:13px;user-select:none;';
+        const layoutSelect = document.createElement('select');
+        layoutSelect.style.cssText = 'font-size:13px;padding:2px 4px;';
+        for (const key of Object.keys(KNOWN_LAYOUTS)) {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = key;
+            if (key === this._layout) {
+                opt.selected = true;
+            }
+            layoutSelect.appendChild(opt);
+        }
+        layoutRow.appendChild(layoutLabel);
+        layoutRow.appendChild(layoutSelect);
+
+        const hintModeRow = document.createElement('div');
+        hintModeRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+        const hintModeLabel = document.createElement('label');
+        hintModeLabel.textContent = 'Hint mode:';
+        hintModeLabel.style.cssText = 'font-size:13px;user-select:none;';
+        const hintModeSelect = document.createElement('select');
+        hintModeSelect.style.cssText = 'font-size:13px;padding:2px 4px;';
+        for (const mode of ['alphabet', 'centered']) {
+            const opt = document.createElement('option');
+            opt.value = mode;
+            opt.textContent = mode;
+            if (mode === this._hintMode) {
+                opt.selected = true;
+            }
+            hintModeSelect.appendChild(opt);
+        }
+        hintModeRow.appendChild(hintModeLabel);
+        hintModeRow.appendChild(hintModeSelect);
+
         const storageInfo = document.createElement('div');
         storageInfo.textContent = `Storage: ${this._storage.name}`;
         storageInfo.style.cssText = 'font-size:11px;color:#999;margin-bottom:12px;';
@@ -807,6 +1044,9 @@ export class KeyboardControlEngine {
                 this._storage.set('kbShortcut', captured);
             }
             this.setFilterHidden(hiddenCheckbox.checked);
+            this.setUppercaseHints(uppercaseCheckbox.checked);
+            this.setLayout(layoutSelect.value);
+            this.setHintMode(hintModeSelect.value as 'alphabet' | 'centered');
             close();
         });
 
@@ -817,6 +1057,9 @@ export class KeyboardControlEngine {
         modal.appendChild(display);
         modal.appendChild(helpText);
         modal.appendChild(hiddenToggleRow);
+        modal.appendChild(uppercaseToggleRow);
+        modal.appendChild(layoutRow);
+        modal.appendChild(hintModeRow);
         modal.appendChild(storageInfo);
         modal.appendChild(btnRow);
         btnRow.appendChild(saveBtn);

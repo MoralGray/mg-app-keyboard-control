@@ -22,6 +22,7 @@ hr { margin: 20px 0; }
 <button class="tab active" data-tab="one-letter">1-letter mode (&le;26)</button>
 <button class="tab" data-tab="two-letter">2-letter mode (&gt;26)</button>
 <button class="tab" data-tab="hidden">Hidden elements</button>
+<button class="tab" data-tab="many-inputs">101 inputs</button>
 </div>
 
 <!-- Tab 1: ≤26 elements — 1-letter hints -->
@@ -35,6 +36,7 @@ hr { margin: 20px 0; }
 <button>Btn6</button>
 <button>Btn7</button>
 <button>Btn8</button>
+<button type="submit">Submit 1</button>
 
 <input type="text" placeholder="single input should get 'i'">
 
@@ -46,6 +48,9 @@ hr { margin: 20px 0; }
 <!-- Tab 2: >26 elements — 2-letter hints -->
 <div id="two-letter" class="tab-content">
 <h2>2-letter mode (many elements)</h2>
+<button type="submit">Submit A</button>
+<button type="submit">Submit B</button>
+<button type="submit">Submit C</button>
 <button>B01</button><button>B02</button><button>B03</button><button>B04</button><button>B05</button>
 <button>B06</button><button>B07</button><button>B08</button><button>B09</button><button>B10</button>
 <button>B11</button><button>B12</button><button>B13</button><button>B14</button><button>B15</button>
@@ -78,7 +83,7 @@ hr { margin: 20px 0; }
 </div>
 
 <div id="hidden" class="tab-content">
-  <h2>Hidden elements (should NOT show hints)</h2>
+  <h2>Hidden elements (settings: skip hidden elements)</h2>
   <p>Activate keyboard control — none of the elements below should have a hint label.</p>
 
   <div style="border:1px dashed #999; padding:8px; margin-bottom:8px;">
@@ -96,6 +101,31 @@ hr { margin: 20px 0; }
     <button style="width:0;height:0;overflow:hidden">zero-size overflow hidden</button>
   </div>
 </div>
+
+  <div id="many-inputs" class="tab-content">
+    <h2>101 inputs — large two-letter mode</h2>
+    <input placeholder="inp 1"><input placeholder="inp 2"><input placeholder="inp 3"><input placeholder="inp 4"><input placeholder="inp 5">
+    <input placeholder="inp 6"><input placeholder="inp 7"><input placeholder="inp 8"><input placeholder="inp 9"><input placeholder="inp 10">
+    <input placeholder="inp 11"><input placeholder="inp 12"><input placeholder="inp 13"><input placeholder="inp 14"><input placeholder="inp 15">
+    <input placeholder="inp 16"><input placeholder="inp 17"><input placeholder="inp 18"><input placeholder="inp 19"><input placeholder="inp 20">
+    <input placeholder="inp 21"><input placeholder="inp 22"><input placeholder="inp 23"><input placeholder="inp 24"><input placeholder="inp 25">
+    <input placeholder="inp 26"><input placeholder="inp 27"><input placeholder="inp 28"><input placeholder="inp 29"><input placeholder="inp 30">
+    <input placeholder="inp 31"><input placeholder="inp 32"><input placeholder="inp 33"><input placeholder="inp 34"><input placeholder="inp 35">
+    <input placeholder="inp 36"><input placeholder="inp 37"><input placeholder="inp 38"><input placeholder="inp 39"><input placeholder="inp 40">
+    <input placeholder="inp 41"><input placeholder="inp 42"><input placeholder="inp 43"><input placeholder="inp 44"><input placeholder="inp 45">
+    <input placeholder="inp 46"><input placeholder="inp 47"><input placeholder="inp 48"><input placeholder="inp 49"><input placeholder="inp 50">
+    <input placeholder="inp 51"><input placeholder="inp 52"><input placeholder="inp 53"><input placeholder="inp 54"><input placeholder="inp 55">
+    <input placeholder="inp 56"><input placeholder="inp 57"><input placeholder="inp 58"><input placeholder="inp 59"><input placeholder="inp 60">
+    <input placeholder="inp 61"><input placeholder="inp 62"><input placeholder="inp 63"><input placeholder="inp 64"><input placeholder="inp 65">
+    <input placeholder="inp 66"><input placeholder="inp 67"><input placeholder="inp 68"><input placeholder="inp 69"><input placeholder="inp 70">
+    <input placeholder="inp 71"><input placeholder="inp 72"><input placeholder="inp 73"><input placeholder="inp 74"><input placeholder="inp 75">
+    <input placeholder="inp 76"><input placeholder="inp 77"><input placeholder="inp 78"><input placeholder="inp 79"><input placeholder="inp 80">
+    <input placeholder="inp 81"><input placeholder="inp 82"><input placeholder="inp 83"><input placeholder="inp 84"><input placeholder="inp 85">
+    <input placeholder="inp 86"><input placeholder="inp 87"><input placeholder="inp 88"><input placeholder="inp 89"><input placeholder="inp 90">
+    <input placeholder="inp 91"><input placeholder="inp 92"><input placeholder="inp 93"><input placeholder="inp 94"><input placeholder="inp 95">
+    <input placeholder="inp 96"><input placeholder="inp 97"><input placeholder="inp 98"><input placeholder="inp 99"><input placeholder="inp 100">
+    <input placeholder="inp 101">
+  </div>
 
 <script src="dist/keyboard-control.js"></script>
 <script>
