@@ -76,11 +76,20 @@ var KeyboardControl = (function(exports) {
 	var HINT_W = 30;
 	var HINT_H = 22;
 	function generateHints(count, alphabet = ALPHABET) {
-		if (count <= alphabet.length) return alphabet.slice(0, count).split("");
+		if (count === 0) return [];
+		const aLen = alphabet.length;
+		let len = 1;
+		while (aLen ** len < count) len++;
 		const combos = [];
-		for (const a of alphabet) for (const b of alphabet) {
-			combos.push(a + b);
-			if (combos.length === count) return combos;
+		for (let i = 0; i < count; i++) {
+			let n = i;
+			let s = "";
+			for (let p = 0; p < len; p++) {
+				const pow = aLen ** (len - 1 - p);
+				s += alphabet[Math.floor(n / pow)];
+				n %= pow;
+			}
+			combos.push(s);
 		}
 		return combos;
 	}
@@ -109,11 +118,22 @@ var KeyboardControl = (function(exports) {
 			emit(LEFT_HAND_LETTERS, 1, count);
 			return out;
 		}
-		if (pull("qwerasdfzxcv", 2, 144)) return out;
-		if (pull("poiulkjhmn", 1, 10)) return out;
-		if (pull("poiulkjhmn", 2, 100)) return out;
-		if (pull("qwerasdfzxcv", 3, 1728)) return out;
-		if (pull("poiulkjhmn", 3, 1e3)) return out;
+		const L2_MAX = 144;
+		const L3_MAX = 1728;
+		const R3_MAX = 1e3;
+		if (count <= L2_MAX) {
+			pull(LEFT_HAND_LETTERS, 2, count);
+			return out;
+		}
+		if (count <= 244) {
+			pull(LEFT_HAND_LETTERS, 2, L2_MAX);
+			pull(RIGHT_HAND_LETTERS, 2, count - L2_MAX);
+			return out;
+		}
+		pull(LEFT_HAND_LETTERS, 3, L3_MAX);
+		if (out.length >= count) return out;
+		pull(RIGHT_HAND_LETTERS, 3, Math.min(count - out.length, R3_MAX));
+		if (out.length >= count) return out;
 		for (let len = 4; out.length < count; len++) {
 			if (pull("qwerasdfzxcv", len, 12 ** len)) return out;
 			if (pull("poiulkjhmn", len, 10 ** len)) return out;
@@ -465,7 +485,7 @@ var KeyboardControl = (function(exports) {
 			this._isActive = true;
 			this._hintedElements = elements;
 			this._currentFilter = "";
-			this._isTwoLetterMode = elements.length > 0 && elements[0].hint.length > 1;
+			this._isTwoLetterMode = elements.length > 0 && elements.some((e) => e.hint.length > 1);
 			if (elements.length > 0) {
 				const labels = elements.map((e) => e.hint);
 				const rows = [];

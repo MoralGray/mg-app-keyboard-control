@@ -23,6 +23,8 @@ hr { margin: 20px 0; }
 <button class="tab" data-tab="one-letter">One letter (13)</button>
 <button class="tab" data-tab="two-letter">Two letter (48)</button>
 <button class="tab" data-tab="hidden">Hidden (8)</button>
+<button class="tab" data-tab="twohundred">200 elems</button>
+<button class="tab" data-tab="thousand">1000 elems</button>
 <button class="tab" data-tab="many-inputs">101 inputs</button>
 </div>
 
@@ -115,6 +117,16 @@ hr { margin: 20px 0; }
   </div>
 </div>
 
+  <div id="twohundred" class="tab-content">
+    <h2>200 buttons — centered L2+R2 transition</h2>
+    <div id="twohundred-container"></div>
+  </div>
+
+  <div id="thousand" class="tab-content">
+    <h2>1000 buttons — three-letter mode</h2>
+    <div id="thousand-container"></div>
+  </div>
+
   <div id="many-inputs" class="tab-content">
     <h2>101 inputs — large two-letter mode</h2>
     <input placeholder="inp 1"><input placeholder="inp 2"><input placeholder="inp 3"><input placeholder="inp 4"><input placeholder="inp 5">
@@ -153,6 +165,26 @@ hr { margin: 20px 0; }
     });
   });
 })();
+
+// # generate 200 buttons for the twohundred tab
+const twohundredContainer = document.getElementById('twohundred-container');
+if (twohundredContainer) {
+  for (let i = 1; i <= 200; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = `Btn${i}`;
+    twohundredContainer.appendChild(btn);
+  }
+}
+
+// # generate 1000 buttons for the thousand tab
+const thousandContainer = document.getElementById('thousand-container');
+if (thousandContainer) {
+  for (let i = 1; i <= 1000; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = `Btn${i}`;
+    thousandContainer.appendChild(btn);
+  }
+}
 </script>
 </body>
 </html>

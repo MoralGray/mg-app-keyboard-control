@@ -170,18 +170,27 @@ export const HINT_H = 22;
 const GAP = 4;
 
 export function generateHints(count: number, alphabet = ALPHABET): string[] {
-    if (count <= alphabet.length) {
-        return alphabet.slice(0, count).split('');
+    if (count === 0) {
+        return [];
+    }
+
+    const aLen = alphabet.length;
+
+    let len = 1;
+    while (aLen ** len < count) {
+        len++;
     }
 
     const combos: string[] = [];
-    for (const a of alphabet) {
-        for (const b of alphabet) {
-            combos.push(a + b);
-            if (combos.length === count) {
-                return combos;
-            }
+    for (let i = 0; i < count; i++) {
+        let n = i;
+        let s = '';
+        for (let p = 0; p < len; p++) {
+            const pow = aLen ** (len - 1 - p);
+            s += alphabet[Math.floor(n / pow)];
+            n %= pow;
         }
+        combos.push(s);
     }
 
     return combos;
@@ -219,21 +228,27 @@ export function generateHintsCentered(count: number): string[] {
         return out;
     }
 
-    if (pull(LEFT_HAND_LETTERS, 2, 144)) {
+    const L2_MAX = 144;
+    const R2_MAX = 100;
+    const L3_MAX = 1728;
+    const R3_MAX = 1000;
+
+    if (count <= L2_MAX) {
+        pull(LEFT_HAND_LETTERS, 2, count);
         return out;
     }
-    if (pull(RIGHT_HAND_LETTERS, 1, 10)) {
+    if (count <= L2_MAX + R2_MAX) {
+        pull(LEFT_HAND_LETTERS, 2, L2_MAX);
+        pull(RIGHT_HAND_LETTERS, 2, count - L2_MAX);
         return out;
     }
 
-    if (pull(RIGHT_HAND_LETTERS, 2, 100)) {
+    pull(LEFT_HAND_LETTERS, 3, L3_MAX);
+    if (out.length >= count) {
         return out;
     }
-
-    if (pull(LEFT_HAND_LETTERS, 3, 1728)) {
-        return out;
-    }
-    if (pull(RIGHT_HAND_LETTERS, 3, 1000)) {
+    pull(RIGHT_HAND_LETTERS, 3, Math.min(count - out.length, R3_MAX));
+    if (out.length >= count) {
         return out;
     }
 
@@ -680,7 +695,7 @@ export class KeyboardControlEngine {
         this._isActive = true;
         this._hintedElements = elements;
         this._currentFilter = '';
-        this._isTwoLetterMode = elements.length > 0 && elements[0].hint.length > 1;
+        this._isTwoLetterMode = elements.length > 0 && elements.some((e) => e.hint.length > 1);
 
         if (elements.length > 0) {
             const labels = elements.map((e) => e.hint);
